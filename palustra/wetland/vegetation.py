@@ -1,12 +1,14 @@
 """Hydrophytic vegetation mathematical logic adhering to USACE 1987 Manual & Regional Supplements."""
 
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from palustra.wetland.models import (
     SpeciesCover,
     StratumDominanceResult,
     VegetationDetermination,
 )
+from palustra.wetland.regions.base import RegionalSupplementPolicy
+from palustra.wetland.regions.factory import RegionalPolicyFactory
 
 INDICATOR_WEIGHTS: Dict[str, int] = {
     "OBL": 1,
@@ -155,9 +157,27 @@ def calculate_prevalence_index(
     return float(d_pi)
 
 
+def classify_stratum(
+    policy: Union[RegionalSupplementPolicy, str],
+    dbh_in: Optional[float] = None,
+    height_m: Optional[float] = None,
+    is_woody: bool = True,
+    is_vine: bool = False,
+) -> str:
+    """Classify a botanical specimen into a regulatory stratum using the regional supplement policy."""
+    policy_instance = RegionalPolicyFactory.get_policy(policy)
+    definitions = policy_instance.get_stratum_definitions()
+
+    for name, criteria in definitions.items():
+        if criteria.matches(dbh_in=dbh_in, height_m=height_m, is_woody=is_woody, is_vine=is_vine):
+            return criteria.name
+    return "Herb"
+
+
 def evaluate_hydrophytic_vegetation(
     strata_data: Dict[str, Sequence[SpeciesCover]],
     enable_morphological_adaptations: bool = True,
+    policy: Optional[Union[RegionalSupplementPolicy, str]] = None,
 ) -> VegetationDetermination:
     """Evaluate hydrophytic vegetation across all strata following USACE regulatory hierarchy:
 
@@ -168,12 +188,32 @@ def evaluate_hydrophytic_vegetation(
     5. Morphological Adaptations: If Dominance and PI fail, FACU dominants with >=50% adaptations
        are reassigned to FAC and re-evaluated.
     """
+    policy_instance: Optional[RegionalSupplementPolicy] = None
+    if policy is not None:
+        policy_instance = RegionalPolicyFactory.get_policy(policy)
+
+    # Process strata data: resolve missing or regionally-specific indicator statuses via policy
+    processed_strata: Dict[str, List[SpeciesCover]] = {}
+    for stratum_name, species_list in strata_data.items():
+        processed_list = []
+        for sp in species_list:
+            sp_copy = sp.model_copy()
+            if policy_instance is not None:
+                # If indicator is not provided, or taxon has a policy-specific rating
+                policy_rating = policy_instance.get_indicator_status(sp.taxon, sp.indicator_status or "NL")
+                if policy_rating and policy_rating != "NL":
+                    sp_copy.indicator_status = policy_rating
+                elif not sp_copy.indicator_status:
+                    sp_copy.indicator_status = "NL"
+            processed_list.append(sp_copy)
+        processed_strata[stratum_name] = processed_list
+
     # 1. Run 50/20 rule per stratum
     strata_results: Dict[str, StratumDominanceResult] = {}
     all_dominants: List[SpeciesCover] = []
     all_species_flat: List[SpeciesCover] = []
 
-    for stratum_name, species_list in strata_data.items():
+    for stratum_name, species_list in processed_strata.items():
         res = calculate_stratum_50_20(stratum_name, species_list)
         strata_results[stratum_name] = res
         all_dominants.extend(res.dominants)

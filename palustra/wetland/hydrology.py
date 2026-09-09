@@ -1,6 +1,6 @@
 """Wetland hydrology decision logic with regional tier switching and automated FAC-Neutral test."""
 
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 from palustra.wetland.models import (
     FACNeutralResult,
     HydrologyDetermination,
@@ -8,6 +8,8 @@ from palustra.wetland.models import (
     RegionEnum,
     SpeciesCover,
 )
+from palustra.wetland.regions.base import RegionalSupplementPolicy
+from palustra.wetland.regions.factory import RegionalPolicyFactory
 
 # Regional indicator tier lookup: Indicator Code -> (AGCP Tier, EMP Tier)
 # Tier values: "Primary", "Secondary", "Not Recognized"
@@ -126,22 +128,21 @@ def compute_fac_neutral_test(
     )
 
 
-def get_indicator_tier(indicator_code: str, region: RegionEnum) -> str:
+def get_indicator_tier(
+    indicator_code: str,
+    region: Union[RegionalSupplementPolicy, RegionEnum, str],
+) -> str:
     """Return the regulatory tier ('Primary', 'Secondary', or 'Not Recognized') for an indicator in a region."""
-    clean_code = indicator_code.strip().upper()
-    if clean_code not in REGIONAL_HYDROLOGY_TIERS:
-        return "Not Recognized"
-
-    agcp_tier, emp_tier = REGIONAL_HYDROLOGY_TIERS[clean_code]
-    return agcp_tier if region == RegionEnum.AGCP else emp_tier
+    policy = RegionalPolicyFactory.get_policy(region)
+    return policy.get_hydrology_tier(indicator_code)
 
 
 def evaluate_wetland_hydrology(
-    region: RegionEnum,
+    region: Union[RegionalSupplementPolicy, RegionEnum, str],
     observed_indicators: Sequence[str],
     dominants: Optional[Sequence[SpeciesCover]] = None,
 ) -> HydrologyDetermination:
-    """Evaluate wetland hydrology compliance under EMP or AGCP Regional Supplements.
+    """Evaluate wetland hydrology compliance under the specified USACE Regional Supplement policy.
 
     Core Rule:
         Wetland Hydrology is PRESENT if:
@@ -152,6 +153,9 @@ def evaluate_wetland_hydrology(
         If `dominants` is provided, Indicator D5 is computed automatically.
         If D5 passes (N_wet > N_dry), D5 is automatically added to confirmed secondary indicators.
     """
+    policy = RegionalPolicyFactory.get_policy(region)
+    region_enum = policy.region_code
+
     confirmed_primary: List[str] = []
     confirmed_secondary: List[str] = []
     remarks: List[str] = []
@@ -175,24 +179,24 @@ def evaluate_wetland_hydrology(
                 f"[{fac_result.n_fac} FAC excluded]."
             )
 
-    # Classify each indicator according to the specified region
+    # Classify each indicator according to the polymorphic policy
     for code in sorted(active_codes):
-        tier = get_indicator_tier(code, region)
+        tier = policy.get_hydrology_tier(code)
         name = INDICATOR_NAMES.get(code, code)
 
         if tier == "Primary":
             confirmed_primary.append(code)
-            remarks.append(f"Confirmed Primary Indicator: {code} - {name} ({region.value}).")
+            remarks.append(f"Confirmed Primary Indicator: {code} - {name} ({region_enum.value}).")
         elif tier == "Secondary":
             confirmed_secondary.append(code)
-            remarks.append(f"Confirmed Secondary Indicator: {code} - {name} ({region.value}).")
+            remarks.append(f"Confirmed Secondary Indicator: {code} - {name} ({region_enum.value}).")
         else:
             remarks.append(
-                f"Indicator {code} ({name}) is NOT RECOGNIZED in the {region.value} regional supplement."
+                f"Indicator {code} ({name}) is NOT RECOGNIZED in the {region_enum.value} regional supplement."
             )
 
-    # Decision logic: >= 1 Primary OR >= 2 Secondary
-    hydrology_present = (len(confirmed_primary) >= 1) or (len(confirmed_secondary) >= 2)
+    # Decision logic delegated to policy strategy
+    hydrology_present = policy.validate_hydrology_indicators(confirmed_primary, confirmed_secondary)
 
     if hydrology_present:
         if len(confirmed_primary) >= 1:
@@ -207,7 +211,7 @@ def evaluate_wetland_hydrology(
         )
 
     return HydrologyDetermination(
-        region=region,
+        region=region_enum,
         primary_indicators=confirmed_primary,
         secondary_indicators=confirmed_secondary,
         fac_neutral=fac_result,

@@ -6,9 +6,10 @@ from typing import Dict, List, Optional, Set
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-class RegionEnum(str, Enum):
-    EMP = "EMP"    # Eastern Mountains and Piedmont
-    AGCP = "AGCP"  # Atlantic and Gulf Coastal Plain
+from palustra.wetland.regions.base import RegionalSupplementEnum, StratumCriteria
+
+# Preserve backward compatibility while adopting extensible RegionalSupplementEnum
+RegionEnum = RegionalSupplementEnum
 
 
 class IndicatorStatus(str, Enum):

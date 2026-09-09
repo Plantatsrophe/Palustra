@@ -1,11 +1,13 @@
 """NRCS Hydric Soil indicators evaluation (v8.2) for Munsell matrix & redox morphology."""
 
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, Union
 from palustra.wetland.models import (
     HydricSoilIndicatorResult,
     SoilDetermination,
     SoilHorizon,
 )
+from palustra.wetland.regions.base import RegionalSupplementPolicy
+from palustra.wetland.regions.factory import RegionalPolicyFactory
 
 GLEY_1_HUES = {"10Y", "5GY", "10GY", "5G", "10G", "5BG", "10BG", "5B", "10B", "5PB", "N"}
 GLEY_2_HUES = {"5PB", "10PB", "5P", "10P", "5RP"}
@@ -320,18 +322,111 @@ def check_indicator_s5(horizons: Sequence[SoilHorizon]) -> HydricSoilIndicatorRe
     )
 
 
-def evaluate_hydric_soils(horizons: Sequence[SoilHorizon]) -> SoilDetermination:
-    """Evaluate soil pit profile against NRCS indicators A11, A12, F3, F6, and S5."""
-    checkers = [
-        check_indicator_a11,
-        check_indicator_a12,
-        check_indicator_f3,
-        check_indicator_f6,
-        check_indicator_s5,
-    ]
+def check_indicator_f19(horizons: Sequence[SoilHorizon]) -> HydricSoilIndicatorResult:
+    """Indicator F19: Piedmont Floodplain Soils (EMP specific).
+
+    Criteria:
+    - Layer >= 15 cm thick starting within 25 cm of the mineral surface with:
+      1. Matrix Value <= 4, Chroma <= 2; AND
+      2. >= 2% distinct or prominent redox concentrations.
+    """
+    for h in horizons:
+        if h.top_depth_cm <= 25.0 and h.thickness_cm >= 15.0:
+            val_ok = h.matrix_value <= 4.0
+            chroma_ok = h.matrix_chroma <= 2.0
+            redox_ok = (
+                h.redox_percent >= 2.0
+                and h.redox_distinctness.lower() in ("distinct", "prominent")
+            )
+            if val_ok and chroma_ok and redox_ok and not h.is_organic:
+                return HydricSoilIndicatorResult(
+                    code="F19",
+                    name="Piedmont Floodplain Soils",
+                    confirmed=True,
+                    qualifying_layers=[h.name],
+                    rationale=(
+                        f"Horizon {h.name} ({h.top_depth_cm}-{h.bottom_depth_cm} cm, thickness={h.thickness_cm} cm >= 15 cm) "
+                        f"starting at {h.top_depth_cm} cm <= 25 cm has Value={h.matrix_value} <= 4, "
+                        f"Chroma={h.matrix_chroma} <= 2, and {h.redox_percent}% {h.redox_distinctness} redox concentrations."
+                    ),
+                )
+
+    return HydricSoilIndicatorResult(
+        code="F19",
+        name="Piedmont Floodplain Soils",
+        confirmed=False,
+        rationale="No mineral horizon satisfies F19 criteria (>= 15 cm thick starting <= 25 cm, Value <= 4, Chroma <= 2, >= 2% redox).",
+    )
+
+
+def check_indicator_f20(horizons: Sequence[SoilHorizon]) -> HydricSoilIndicatorResult:
+    """Indicator F20: Anomalous Bright Loamy Soils (AGCP specific).
+
+    Criteria:
+    - Layer >= 10 cm thick starting within 30 cm of the mineral surface with:
+      1. Matrix Value >= 5, Chroma 3 or 4; AND
+      2. >= 10% distinct or prominent redox concentrations.
+    """
+    for h in horizons:
+        if h.top_depth_cm <= 30.0 and h.thickness_cm >= 10.0:
+            val_ok = h.matrix_value >= 5.0
+            chroma_ok = 3.0 <= h.matrix_chroma <= 4.0
+            redox_ok = (
+                h.redox_percent >= 10.0
+                and h.redox_distinctness.lower() in ("distinct", "prominent")
+            )
+            if val_ok and chroma_ok and redox_ok and not h.is_organic:
+                return HydricSoilIndicatorResult(
+                    code="F20",
+                    name="Anomalous Bright Loamy Soils",
+                    confirmed=True,
+                    qualifying_layers=[h.name],
+                    rationale=(
+                        f"Horizon {h.name} ({h.top_depth_cm}-{h.bottom_depth_cm} cm, thickness={h.thickness_cm} cm >= 10 cm) "
+                        f"starting at {h.top_depth_cm} cm <= 30 cm has Value={h.matrix_value} >= 5, "
+                        f"Chroma={h.matrix_chroma} in [3, 4], and {h.redox_percent}% {h.redox_distinctness} redox concentrations (>= 10%)."
+                    ),
+                )
+
+    return HydricSoilIndicatorResult(
+        code="F20",
+        name="Anomalous Bright Loamy Soils",
+        confirmed=False,
+        rationale="No mineral horizon satisfies F20 criteria (>= 10 cm thick starting <= 30 cm, Value >= 5, Chroma 3-4, >= 10% redox).",
+    )
+
+
+def evaluate_hydric_soils(
+    horizons: Sequence[SoilHorizon],
+    policy: Optional[Union[RegionalSupplementPolicy, str]] = None,
+) -> SoilDetermination:
+    """Evaluate soil pit profile against NRCS indicators with optional regional supplement policy injection."""
+    policy_instance: Optional[RegionalSupplementPolicy] = None
+    if policy is not None:
+        policy_instance = RegionalPolicyFactory.get_policy(policy)
+
+    # If policy is injected, evaluate both common and regional indicators; otherwise evaluate standard base set
+    if policy_instance is not None:
+        checkers = [
+            check_indicator_a11,
+            check_indicator_a12,
+            check_indicator_f3,
+            check_indicator_f6,
+            check_indicator_s5,
+            check_indicator_f19,
+            check_indicator_f20,
+        ]
+    else:
+        checkers = [
+            check_indicator_a11,
+            check_indicator_a12,
+            check_indicator_f3,
+            check_indicator_f6,
+            check_indicator_s5,
+        ]
 
     evaluated: List[HydricSoilIndicatorResult] = []
-    confirmed_codes: List[str] = []
+    raw_confirmed_codes: List[str] = []
     depleted_layers: List[str] = []
     gleyed_layers: List[str] = []
 
@@ -346,13 +441,29 @@ def evaluate_hydric_soils(horizons: Sequence[SoilHorizon]) -> SoilDetermination:
         res = check(horizons)
         evaluated.append(res)
         if res.confirmed:
-            confirmed_codes.append(res.code)
+            raw_confirmed_codes.append(res.code)
 
-    hydric_present = len(confirmed_codes) > 0
-    remarks = [
-        f"Hydric Soil Status: {'CONFIRMED' if hydric_present else 'NOT MET'}.",
-        f"Confirmed Indicators: {', '.join(confirmed_codes) if confirmed_codes else 'None'}.",
-    ]
+    # Apply policy validation or base fallback
+    remarks: List[str] = []
+    if policy_instance is not None:
+        valid_confirmed = [
+            c for c in raw_confirmed_codes
+            if c in policy_instance.approved_soil_indicators
+        ]
+        rejected = [c for c in raw_confirmed_codes if c not in policy_instance.approved_soil_indicators]
+        if rejected:
+            for rej in rejected:
+                remarks.append(
+                    f"Indicator {rej} confirmed by morphology but NOT APPROVED in {policy_instance.region_code.value}."
+                )
+        hydric_present = policy_instance.validate_hydric_soil_indicators(raw_confirmed_codes)
+        confirmed_codes = valid_confirmed
+    else:
+        confirmed_codes = raw_confirmed_codes
+        hydric_present = len(confirmed_codes) > 0
+
+    remarks.insert(0, f"Confirmed Indicators: {', '.join(confirmed_codes) if confirmed_codes else 'None'}.")
+    remarks.insert(0, f"Hydric Soil Status: {'CONFIRMED' if hydric_present else 'NOT MET'}.")
 
     return SoilDetermination(
         hydric_soil_present=hydric_present,
