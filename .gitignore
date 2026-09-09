@@ -19,3 +19,10 @@ dist/
 palustra.db
 palustra.db-shm
 palustra.db-wal
+
+# Frontend dependencies & Next.js build output
+**/node_modules/
+**/.next/
+frontend/out/
+*.log
+

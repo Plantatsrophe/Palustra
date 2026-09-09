@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0b1315;
+    --foreground: #f1f5f9;
+  }
+
+  body {
+    color: var(--foreground);
+    background: var(--background);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: text;
+  }
+}
+
+/* Outdoor Sunlight / High-Contrast Mode */
+.sunlight-mode {
+  --background: #ffffff;
+  --foreground: #020617;
+  filter: contrast(1.15) brightness(1.05);
+}
+
+.sunlight-mode .bg-field-dark {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.sunlight-mode .bg-field-surface {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.sunlight-mode .bg-field-card {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+.sunlight-mode .text-slate-100,
+.sunlight-mode .text-slate-200,
+.sunlight-mode .text-slate-300 {
+  color: #0f172a !important;
+}
+
+.sunlight-mode .text-slate-400,
+.sunlight-mode .text-slate-500 {
+  color: #334155 !important;
+}
+
+/* Custom Scrollbar for Field Tablets */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121e22;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #253b42;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334e57;
+}

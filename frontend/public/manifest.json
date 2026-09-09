@@ -1,0 +1,39 @@
+{
+  "name": "Palustra - Field Wetland Determination PWA",
+  "short_name": "Palustra",
+  "description": "Offline-First Jurisdictional Wetland Determination & USACE Hydrophytic Vegetation Calculator",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1315",
+  "theme_color": "#10b981",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity", "scientific"],
+  "shortcuts": [
+    {
+      "name": "Quick Plot Entry",
+      "short_name": "New Plot",
+      "description": "Open high-speed data entry sheet",
+      "url": "/?view=entry"
+    },
+    {
+      "name": "Verification Audit",
+      "short_name": "Audit",
+      "description": "Open USACE verification audit panel",
+      "url": "/?view=verification"
+    }
+  ]
+}
