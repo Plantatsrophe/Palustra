@@ -4,9 +4,11 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
+from palustra.ai import FieldNoteExtractionResponse, FieldNotesParserService
 
 from palustra.config import settings
 from palustra.db.fts import search_taxa
@@ -265,3 +267,51 @@ def export_offline_field_bundle(
 def get_cache_telemetry():
     """Retrieve operational telemetry from the in-memory local field cache."""
     return field_cache.get_stats()
+
+
+@router.post(
+    "/field-notes/parse-image",
+    response_model=FieldNoteExtractionResponse,
+    tags=["AI Field Note Transcription"],
+    summary="Parse photo of handwritten botanical field notes with Gemini 1.5 Flash",
+)
+async def parse_field_notes_image_endpoint(
+    file: UploadFile = File(..., description="Image file of handwritten field notes"),
+    confidence_threshold: Optional[float] = Query(
+        None,
+        ge=0.0,
+        le=1.0,
+        description="Override confidence threshold for flagging low-confidence entries",
+    ),
+):
+    """Asynchronously parse an uploaded photo of handwritten botanical field notes.
+
+    Enforces strict JSON schemas, calculates per-row extraction confidence scores,
+    and flags low-confidence or ambiguous botanical entries.
+    """
+    image_bytes = await file.read()
+    if not image_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded image file is empty.",
+        )
+
+    mime_type = file.content_type or "image/jpeg"
+    parser_service = FieldNotesParserService()
+    try:
+        result = await parser_service.parse_field_notes_image(
+            image_bytes=image_bytes,
+            mime_type=mime_type,
+            confidence_threshold=confidence_threshold,
+        )
+        return result
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Field note transcription error: {str(exc)}",
+        )

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import os
+from typing import Optional
 from pydantic import BaseModel, Field
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -34,5 +35,11 @@ class Settings(BaseModel):
     # API Settings
     api_host: str = Field(default_factory=lambda: os.getenv("PALUSTRA_API_HOST", "0.0.0.0"))
     api_port: int = Field(default_factory=lambda: int(os.getenv("PALUSTRA_API_PORT", "8000")))
+
+    # Gemini 1.5 Flash AI Settings
+    gemini_api_key: Optional[str] = Field(default_factory=lambda: os.getenv("GEMINI_API_KEY"))
+    gemini_model: str = Field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-1.5-flash"))
+    field_note_confidence_threshold: float = Field(default_factory=lambda: float(os.getenv("PALUSTRA_FIELD_NOTE_CONFIDENCE_THRESHOLD", "0.75")))
+    field_note_temperature: float = Field(default_factory=lambda: float(os.getenv("PALUSTRA_FIELD_NOTE_TEMP", "0.1")))
 
 settings = Settings()
