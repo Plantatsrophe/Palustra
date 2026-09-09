@@ -1,7 +1,7 @@
 """Eastern Mountains and Piedmont (EMP) Regional Supplement Strategy."""
 
 from typing import Dict, List, Optional, Set
-from palustra.wetland.regions.base import (
+from app.wetland.regions.base import (
     RegionalSupplementEnum,
     RegionalSupplementPolicy,
     StratumCriteria,

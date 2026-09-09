@@ -1,15 +1,15 @@
 """Wetland hydrology decision logic with regional tier switching and automated FAC-Neutral test."""
 
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
-from palustra.wetland.models import (
+from app.wetland.models import (
     FACNeutralResult,
     HydrologyDetermination,
     HydrologyObservation,
     RegionEnum,
     SpeciesCover,
 )
-from palustra.wetland.regions.base import RegionalSupplementPolicy
-from palustra.wetland.regions.factory import RegionalPolicyFactory
+from app.wetland.regions.base import RegionalSupplementPolicy
+from app.wetland.regions.factory import RegionalPolicyFactory
 
 # Regional indicator tier lookup: Indicator Code -> (AGCP Tier, EMP Tier)
 # Tier values: "Primary", "Secondary", "Not Recognized"

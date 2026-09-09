@@ -2,13 +2,13 @@
 
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
-from palustra.wetland.models import (
+from app.wetland.models import (
     SpeciesCover,
     StratumDominanceResult,
     VegetationDetermination,
 )
-from palustra.wetland.regions.base import RegionalSupplementPolicy
-from palustra.wetland.regions.factory import RegionalPolicyFactory
+from app.wetland.regions.base import RegionalSupplementPolicy
+from app.wetland.regions.factory import RegionalPolicyFactory
 
 INDICATOR_WEIGHTS: Dict[str, int] = {
     "OBL": 1,

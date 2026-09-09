@@ -1,7 +1,7 @@
 """Unit tests for SQLite FTS5 trigram fuzzy search."""
 
 import pytest
-from palustra.db.fts import search_taxa
+from app.db.fts import search_taxa
 
 def test_fts5_trigram_exact_and_substring_match(seeded_db_session):
     # Substring 'rub' should match 'Acer rubrum'

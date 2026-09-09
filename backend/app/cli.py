@@ -7,14 +7,14 @@ from pathlib import Path
 
 import uvicorn
 
-from palustra.config import settings
-from palustra.core.exceptions import ReportGenerationError, TaxonNotFoundError
-from palustra.db.session import init_db
-from palustra.etl.ingest import run_etl_pipeline
-from palustra.export.models import USACEPlotExportData
-from palustra.models.schemas import RegionEnum, TaxonValidationRequest
-from palustra.services.report_service import ReportService
-from palustra.services.taxon_service import TaxonService
+from app.config import settings
+from app.core.exceptions import ReportGenerationError, TaxonNotFoundError
+from app.db.session import init_db
+from app.etl.ingest import run_etl_pipeline
+from app.export.models import USACEPlotExportData
+from app.models.schemas import RegionEnum, TaxonValidationRequest
+from app.services.report_service import ReportService
+from app.services.taxon_service import TaxonService
 
 
 def cmd_ingest(args):
@@ -107,7 +107,7 @@ def cmd_cache_export(args):
 def cmd_serve(args):
     """Launch FastAPI Uvicorn server."""
     print(f"Starting Palustra API server at http://{args.host}:{args.port}")
-    uvicorn.run("palustra.api.app:app", host=args.host, port=args.port, reload=args.reload)
+    uvicorn.run("app.api.app:app", host=args.host, port=args.port, reload=args.reload)
 
 
 def cmd_export_pdf(args):

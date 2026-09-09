@@ -1,17 +1,17 @@
 """Three-parameter jurisdictional wetland determination synthesis engine."""
 
 from typing import Dict, List, Optional, Sequence, Union
-from palustra.wetland.hydrology import evaluate_wetland_hydrology
-from palustra.wetland.models import (
+from app.wetland.hydrology import evaluate_wetland_hydrology
+from app.wetland.models import (
     RegionEnum,
     SoilHorizon,
     SpeciesCover,
     WetlandDeterminationResult,
 )
-from palustra.wetland.regions.base import RegionalSupplementPolicy
-from palustra.wetland.regions.factory import RegionalPolicyFactory
-from palustra.wetland.soils import evaluate_hydric_soils
-from palustra.wetland.vegetation import evaluate_hydrophytic_vegetation
+from app.wetland.regions.base import RegionalSupplementPolicy
+from app.wetland.regions.factory import RegionalPolicyFactory
+from app.wetland.soils import evaluate_hydric_soils
+from app.wetland.vegetation import evaluate_hydrophytic_vegetation
 
 
 def perform_jurisdictional_wetland_determination(

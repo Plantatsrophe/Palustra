@@ -6,9 +6,9 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from palustra.config import settings
-from palustra.models.db_models import Base
-from palustra.db.fts import init_fts5
+from app.config import settings
+from app.models.db_models import Base
+from app.db.fts import init_fts5
 
 def create_db_engine(db_url: str = settings.database_url, is_memory: bool = False):
     """Create a configured SQLAlchemy 2.0 engine for SQLite."""
@@ -35,11 +35,12 @@ def create_db_engine(db_url: str = settings.database_url, is_memory: bool = Fals
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         try:
-            cursor.execute("PRAGMA foreign_keys=ON;")
-            cursor.execute("PRAGMA busy_timeout=5000;")
-            if not is_memory and ":memory:" not in db_url:
-                cursor.execute("PRAGMA journal_mode=WAL;")
-                cursor.execute("PRAGMA synchronous=NORMAL;")
+            cursor.execute("PRAGMA journal_mode = WAL;")
+            cursor.execute("PRAGMA synchronous = NORMAL;")
+            cursor.execute("PRAGMA cache_size = -64000;")
+            cursor.execute("PRAGMA mmap_size = 268435456;")
+            cursor.execute("PRAGMA foreign_keys = ON;")
+            cursor.execute("PRAGMA busy_timeout = 5000;")
         finally:
             cursor.close()
 

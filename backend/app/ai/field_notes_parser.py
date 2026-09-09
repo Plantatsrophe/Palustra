@@ -5,18 +5,18 @@ import logging
 from typing import Any, Dict, List, Optional, Set
 import google.generativeai as genai
 
-from palustra.ai.prompts import (
+from app.ai.prompts import (
     BOTANICAL_FIELD_NOTES_SYSTEM_INSTRUCTION,
     PARSE_FIELD_NOTES_USER_PROMPT,
 )
-from palustra.ai.schemas import (
+from app.ai.schemas import (
     BotanicalEntryExtraction,
     ConfidenceFlagReasonEnum,
     FieldNoteExtractionResponse,
     FieldNoteMetadata,
 )
-from palustra.config import settings
-from palustra.etl.parser import classify_field_ambiguity
+from app.config import settings
+from app.etl.parser import classify_field_ambiguity
 
 logger = logging.getLogger(__name__)
 

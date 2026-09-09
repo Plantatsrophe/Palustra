@@ -136,3 +136,14 @@ class OfflineCacheManifest(BaseModel):
     generated_at: str
     total_taxa: int
     taxa: List[TaxonRecord]
+
+
+from app.export.models import PlotDeterminationInput
+
+
+class BatchPlotDeterminationRequest(BaseModel):
+    """Payload for batch plot determination requests."""
+
+    plots: List[PlotDeterminationInput] = Field(..., description="List of USACE sampling plots to evaluate.")
+    region: Optional[str] = Field(default="EMP", description="Target USACE Regional Supplement: 'EMP' or 'AGCP'.")
+

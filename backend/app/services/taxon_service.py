@@ -4,19 +4,20 @@ import json
 import logging
 import warnings
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Dict, Generator, List, Optional, Tuple
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from palustra.core.exceptions import AmbiguousTaxonWarning, TaxonNotFoundError
-from palustra.db.fts import search_taxa as fts_search_taxa
-from palustra.db.session import get_db_context
-from palustra.etl.cache import field_cache
-from palustra.etl.parser import classify_field_ambiguity, parse_scientific_name
-from palustra.models.db_models import Taxon
-from palustra.models.schemas import (
+from app.core.exceptions import AmbiguousTaxonWarning, TaxonNotFoundError
+from app.db.fts import search_taxa as fts_search_taxa
+from app.db.session import get_db_context
+from app.etl.cache import field_cache
+from app.etl.parser import classify_field_ambiguity, parse_scientific_name
+from app.models.db_models import Taxon
+from app.models.schemas import (
     FuzzySearchQuery,
     FuzzySearchResponse,
     FuzzySearchResult,
@@ -31,7 +32,7 @@ from palustra.models.schemas import (
     TaxonValidationResult,
 )
 
-logger = logging.getLogger("palustra.services.taxon")
+logger = logging.getLogger("app.services.taxon")
 
 # Common North Carolina & Southeastern botanical synonyms mapped to accepted USDA scientific names
 BOTANICAL_SYNONYMS: Dict[str, str] = {
@@ -62,6 +63,12 @@ STATE_HERITAGE_REGISTRY: Dict[str, Dict[str, str]] = {
 }
 
 
+@lru_cache(maxsize=4096)
+def normalize_botanical_query(raw_query: str) -> str:
+    """Normalize raw botanical query string for consistent cache key resolution."""
+    return " ".join(raw_query.strip().lower().split())
+
+
 @lru_cache(maxsize=1024)
 def resolve_scientific_name(raw_name: str) -> Dict[str, Any]:
     """Parse and standardize raw botanical text with an in-memory LRU cache.
@@ -72,7 +79,7 @@ def resolve_scientific_name(raw_name: str) -> Dict[str, Any]:
     return parse_scientific_name(raw_name)
 
 
-@lru_cache(maxsize=1024)
+@lru_cache(maxsize=4096)
 def _cached_db_taxon_lookup(name_key: str) -> Optional[Dict[str, Any]]:
     """Cached database lookup by normalized clean or species name."""
     with get_db_context() as session:
@@ -107,6 +114,56 @@ def _cached_db_taxon_lookup(name_key: str) -> Optional[Dict[str, Any]]:
         }
 
 
+@lru_cache(maxsize=2048)
+def _cached_db_symbol_lookup(symbol: str) -> Optional[Dict[str, Any]]:
+    """Cached database lookup by normalized USDA PLANTS symbol."""
+    with get_db_context() as session:
+        taxon = session.execute(
+            select(Taxon).where(Taxon.symbol == symbol)
+        ).scalar_one_or_none()
+
+        if not taxon:
+            return None
+
+        return {
+            "id": taxon.id,
+            "symbol": taxon.symbol,
+            "raw_scientific_name": taxon.raw_scientific_name,
+            "clean_scientific_name": taxon.clean_scientific_name,
+            "species_name": taxon.species_name,
+            "genus": taxon.genus,
+            "species_epithet": taxon.species_epithet,
+            "infraspecific_rank": taxon.infraspecific_rank,
+            "infraspecific_epithet": taxon.infraspecific_epithet,
+            "authority": taxon.authority,
+            "common_name": taxon.common_name,
+            "family": taxon.family,
+            "taxonomic_status": taxon.taxonomic_status,
+            "nativity": taxon.nativity,
+            "c_value": taxon.c_value,
+            "nwpl_indicator_emp": taxon.nwpl_indicator_emp,
+            "nwpl_indicator_agcp": taxon.nwpl_indicator_agcp,
+        }
+
+
+@lru_cache(maxsize=4096)
+def _cached_fts_search(
+    norm_query: str,
+    region: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> Dict[str, Any]:
+    """Execute SQLite FTS5 trigram fuzzy search with in-memory LRU memoization."""
+    with get_db_context() as session:
+        return fts_search_taxa(
+            session=session,
+            query_str=norm_query,
+            limit=limit,
+            offset=offset,
+            region=region,
+        )
+
+
 class TaxonService:
     """Decoupled service handling botanical taxonomy, full-text search, and validation."""
 
@@ -137,18 +194,31 @@ class TaxonService:
     ) -> FuzzySearchResponse:
         """Execute SQLite FTS5 trigram fuzzy search for plant scientific and common names.
 
-        Employs field_cache for caching search queries and BM25 ranking.
+        Employs normalized LRU memoization and field_cache to minimize FTS5 database hits.
         """
-        reg_val = region.value if region else None
-        cache_key = field_cache._generate_key("search", q=query, region=reg_val, limit=limit, offset=offset)
+        norm_query = normalize_botanical_query(query)
+        if not norm_query:
+            return FuzzySearchResponse(query=query, total_results=0, results=[])
+
+        reg_val = region.value if isinstance(region, RegionEnum) else (str(region).upper() if region else None)
+        cache_key = field_cache._generate_key("search", q=norm_query, region=reg_val, limit=limit, offset=offset)
         cached_data = field_cache.get(cache_key)
         if cached_data:
             return FuzzySearchResponse(**cached_data)
 
-        with self._get_session() as session:
+        # Check in-memory LRU cache on normalized query
+        search_data = None
+        if self._session is None:
+            search_data = _cached_fts_search(
+                norm_query=norm_query,
+                region=reg_val,
+                limit=limit,
+                offset=offset,
+            )
+        else:
             search_data = fts_search_taxa(
-                session=session,
-                query_str=query,
+                session=self._session,
+                query_str=norm_query,
                 limit=limit,
                 offset=offset,
                 region=reg_val,
@@ -183,35 +253,55 @@ class TaxonService:
         if cached:
             return TaxonRecord(**cached)
 
-        with self._get_session() as session:
-            taxon = session.execute(
+        taxon_dict = None
+        if self._session is not None:
+            taxon = self._session.execute(
                 select(Taxon).where(Taxon.symbol == norm_symbol)
             ).scalar_one_or_none()
+            if taxon:
+                taxon_dict = {
+                    "raw_scientific_name": taxon.raw_scientific_name,
+                    "clean_scientific_name": taxon.clean_scientific_name,
+                    "species_name": taxon.species_name,
+                    "symbol": taxon.symbol,
+                    "common_name": taxon.common_name,
+                    "family": taxon.family,
+                    "taxonomic_status": taxon.taxonomic_status,
+                    "infraspecific_rank": taxon.infraspecific_rank,
+                    "infraspecific_epithet": taxon.infraspecific_epithet,
+                    "authority": taxon.authority,
+                    "nwpl_indicator_emp": taxon.nwpl_indicator_emp,
+                    "nwpl_indicator_agcp": taxon.nwpl_indicator_agcp,
+                    "c_value": taxon.c_value,
+                    "nativity": taxon.nativity,
+                }
+        else:
+            taxon_dict = _cached_db_symbol_lookup(norm_symbol)
 
-            if not taxon:
-                raise TaxonNotFoundError(
-                    identifier=norm_symbol,
-                    message=f"Taxon with USDA symbol '{norm_symbol}' not found in database.",
-                )
-
-            record = TaxonRecord(
-                raw_field_name=taxon.raw_scientific_name,
-                clean_scientific_name=taxon.clean_scientific_name,
-                accepted_scientific_name=taxon.species_name,
-                usda_plants_symbol=taxon.symbol,
-                common_name=taxon.common_name,
-                family=taxon.family,
-                taxonomic_status=taxon.taxonomic_status,
-                infraspecific_rank=taxon.infraspecific_rank,
-                infraspecific_epithet=taxon.infraspecific_epithet,
-                authority=taxon.authority,
-                nwpl_indicator_emp=taxon.nwpl_indicator_emp,
-                nwpl_indicator_agcp=taxon.nwpl_indicator_agcp,
-                c_value=taxon.c_value,
-                nativity=taxon.nativity,
-                identification_confidence=IdentificationConfidenceEnum.DEFINITIVE,
-                flags=[],
+        if not taxon_dict:
+            raise TaxonNotFoundError(
+                identifier=norm_symbol,
+                message=f"Taxon with USDA symbol '{norm_symbol}' not found in database.",
             )
+
+        record = TaxonRecord(
+            raw_field_name=taxon_dict["raw_scientific_name"],
+            clean_scientific_name=taxon_dict["clean_scientific_name"],
+            accepted_scientific_name=taxon_dict["species_name"],
+            usda_plants_symbol=taxon_dict["symbol"],
+            common_name=taxon_dict["common_name"],
+            family=taxon_dict["family"],
+            taxonomic_status=taxon_dict["taxonomic_status"],
+            infraspecific_rank=taxon_dict["infraspecific_rank"],
+            infraspecific_epithet=taxon_dict["infraspecific_epithet"],
+            authority=taxon_dict["authority"],
+            nwpl_indicator_emp=taxon_dict["nwpl_indicator_emp"],
+            nwpl_indicator_agcp=taxon_dict["nwpl_indicator_agcp"],
+            c_value=taxon_dict["c_value"],
+            nativity=taxon_dict["nativity"],
+            identification_confidence=IdentificationConfidenceEnum.DEFINITIVE,
+            flags=[],
+        )
 
         field_cache.set(cache_key, record.model_dump())
         return record
@@ -429,7 +519,7 @@ class TaxonService:
 
                 cached_bundle = {
                     "version": "1.0.0",
-                    "generated_at": func.now(),
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
                     "total_taxa": len(records),
                     "taxa": records,
                 }
@@ -440,5 +530,9 @@ class TaxonService:
     @classmethod
     def clear_caches(cls) -> None:
         """Clear all in-memory LRU caches."""
+        normalize_botanical_query.cache_clear()
         resolve_scientific_name.cache_clear()
         _cached_db_taxon_lookup.cache_clear()
+        _cached_db_symbol_lookup.cache_clear()
+        _cached_fts_search.cache_clear()
+        field_cache.invalidate()

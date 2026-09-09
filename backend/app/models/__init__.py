@@ -1,7 +1,7 @@
 """Models package exporting database entities and Pydantic validation schemas."""
 
-from palustra.models.db_models import Base, Taxon, RegionalIndicator, IngestionLog
-from palustra.models.schemas import (
+from app.models.db_models import Base, Taxon, RegionalIndicator, IngestionLog
+from app.models.schemas import (
     TaxonRecord,
     TaxonValidationRequest,
     TaxonValidationResult,

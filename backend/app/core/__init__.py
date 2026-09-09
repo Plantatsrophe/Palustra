@@ -1,6 +1,6 @@
 """Palustra core package exposing foundational domain models, exceptions, and protocols."""
 
-from palustra.core.exceptions import (
+from app.core.exceptions import (
     AmbiguousTaxonWarning,
     InconsistentRegionalSupplementError,
     InvalidCoverPercentageError,

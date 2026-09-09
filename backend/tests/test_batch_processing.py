@@ -12,18 +12,18 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
-from palustra.db.session import create_db_engine
-from palustra.models.schemas import PlotDeterminationInput, RegionEnum
-from palustra.services.determination_service import (
+from app.db.session import create_db_engine
+from app.models.schemas import PlotDeterminationInput, RegionEnum
+from app.services.determination_service import (
     DeterminationService,
     DeterminationSynthesis,
 )
-from palustra.services.taxon_service import (
+from app.services.taxon_service import (
     TaxonService,
     normalize_botanical_query,
     resolve_scientific_name,
 )
-from palustra.wetland.models import SoilHorizon, SpeciesCover
+from app.wetland.models import SoilHorizon, SpeciesCover
 
 
 def create_synthetic_plots(count: int = 50) -> list[PlotDeterminationInput]:

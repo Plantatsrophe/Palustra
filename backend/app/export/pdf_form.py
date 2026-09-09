@@ -16,14 +16,14 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
-from palustra.export.models import USACEPlotExportData
-from palustra.wetland.models import (
+from app.export.models import USACEPlotExportData
+from app.wetland.models import (
     RegionEnum,
     SoilHorizon,
     SpeciesCover,
     WetlandDeterminationResult,
 )
-from palustra.wetland.synthesis import perform_jurisdictional_wetland_determination
+from app.wetland.synthesis import perform_jurisdictional_wetland_determination
 
 
 # Palette constants for crisp USACE regulatory reporting

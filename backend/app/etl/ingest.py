@@ -10,15 +10,15 @@ import openpyxl
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from palustra.config import settings
-from palustra.db.fts import rebuild_fts5
-from palustra.db.session import get_db_context, init_db
-from palustra.etl.cache import field_cache
-from palustra.etl.parser import clean_text, parse_scientific_name
-from palustra.models.db_models import IngestionLog, RegionalIndicator, Taxon
-from palustra.models.schemas import IngestionSummary
+from app.config import settings
+from app.db.fts import rebuild_fts5
+from app.db.session import get_db_context, init_db
+from app.etl.cache import field_cache
+from app.etl.parser import clean_text, parse_scientific_name
+from app.models.db_models import IngestionLog, RegionalIndicator, Taxon
+from app.models.schemas import IngestionSummary
 
-logger = logging.getLogger("palustra.etl")
+logger = logging.getLogger("app.etl")
 if not logger.handlers:
     handler = logging.StreamHandler()
     formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(name)s: %(message)s")

@@ -3,8 +3,8 @@
 from typing import Dict, List, Optional, Set
 import pytest
 
-from palustra.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
-from palustra.wetland.regions import (
+from app.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
+from app.wetland.regions import (
     AGCPPolicy,
     EMPPolicy,
     RegionalPolicyFactory,
@@ -12,20 +12,20 @@ from palustra.wetland.regions import (
     RegionalSupplementPolicy,
     StratumCriteria,
 )
-from palustra.wetland.soils import (
+from app.wetland.soils import (
     check_indicator_f19,
     check_indicator_f20,
     evaluate_hydric_soils,
 )
-from palustra.wetland.hydrology import (
+from app.wetland.hydrology import (
     evaluate_wetland_hydrology,
     get_indicator_tier,
 )
-from palustra.wetland.vegetation import (
+from app.wetland.vegetation import (
     classify_stratum,
     evaluate_hydrophytic_vegetation,
 )
-from palustra.wetland.synthesis import perform_jurisdictional_wetland_determination
+from app.wetland.synthesis import perform_jurisdictional_wetland_determination
 
 
 class TestRegionalPolicyFactory:

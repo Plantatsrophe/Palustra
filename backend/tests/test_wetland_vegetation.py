@@ -1,8 +1,8 @@
 """Comprehensive unit tests for hydrophytic vegetation mathematical algorithms."""
 
 import pytest
-from palustra.wetland.models import SpeciesCover
-from palustra.wetland.vegetation import (
+from app.wetland.models import SpeciesCover
+from app.wetland.vegetation import (
     calculate_prevalence_index,
     calculate_stratum_50_20,
     evaluate_hydrophytic_vegetation,

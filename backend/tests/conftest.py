@@ -7,11 +7,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
-from palustra.models.db_models import Base, Taxon, RegionalIndicator
-from palustra.db.fts import init_fts5, rebuild_fts5
-from palustra.db.session import get_db
-from palustra.api.app import app
-from palustra.etl.cache import LocalFieldCache
+from app.models.db_models import Base, Taxon, RegionalIndicator
+from app.db.fts import init_fts5, rebuild_fts5
+from app.db.session import get_db
+from app.api.app import app
+from app.etl.cache import LocalFieldCache
 
 @pytest.fixture
 def in_memory_engine():

@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from palustra.wetland.models import (
+from app.wetland.models import (
     HydrologyDetermination,
     RegionEnum,
     SoilDetermination,
@@ -112,6 +112,12 @@ class USACEPlotExportData(BaseModel):
     flag_id: Optional[str] = Field(None, description="Survey ribbon/flag identifier (e.g. 'WL-A-01').")
     transect_id: Optional[str] = Field(None, description="Transect identifier (e.g. 'T-01').")
     paired_plot_id: Optional[str] = Field(None, description="Paired wetland/upland sampling point ID.")
+
+
+class PlotDeterminationInput(USACEPlotExportData):
+    """Input payload for automated three-parameter wetland determination evaluation."""
+
+    pass
 
 
 class GeoJSONExportRequest(BaseModel):

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from threading import RLock
 
-from palustra.config import settings
+from app.config import settings
 
 class LocalFieldCache:
     """Thread-safe In-Memory LRU Cache with TTL and disk snapshot support for field operations."""
@@ -107,8 +107,11 @@ class LocalFieldCache:
         target_path = self.cache_dir / filename
         if not target_path.exists():
             return None
-        with open(target_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(target_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
 
 # Global singleton cache instance
 field_cache = LocalFieldCache()

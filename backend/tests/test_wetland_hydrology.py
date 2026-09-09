@@ -1,12 +1,12 @@
 """Unit tests for wetland hydrology decision logic and automated FAC-Neutral test."""
 
 import pytest
-from palustra.wetland.hydrology import (
+from app.wetland.hydrology import (
     compute_fac_neutral_test,
     evaluate_wetland_hydrology,
     get_indicator_tier,
 )
-from palustra.wetland.models import RegionEnum, SpeciesCover
+from app.wetland.models import RegionEnum, SpeciesCover
 
 
 class TestRegionalHydrologyTiers:

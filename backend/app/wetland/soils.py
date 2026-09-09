@@ -1,13 +1,13 @@
 """NRCS Hydric Soil indicators evaluation (v8.2) for Munsell matrix & redox morphology."""
 
 from typing import List, Optional, Sequence, Tuple, Union
-from palustra.wetland.models import (
+from app.wetland.models import (
     HydricSoilIndicatorResult,
     SoilDetermination,
     SoilHorizon,
 )
-from palustra.wetland.regions.base import RegionalSupplementPolicy
-from palustra.wetland.regions.factory import RegionalPolicyFactory
+from app.wetland.regions.base import RegionalSupplementPolicy
+from app.wetland.regions.factory import RegionalPolicyFactory
 
 GLEY_1_HUES = {"10Y", "5GY", "10GY", "5G", "10G", "5BG", "10BG", "5B", "10B", "5PB", "N"}
 GLEY_2_HUES = {"5PB", "10PB", "5P", "10P", "5RP"}

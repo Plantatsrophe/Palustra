@@ -1,8 +1,8 @@
 """Unit tests for NRCS Hydric Soil indicators (v8.2) and Munsell matrix criteria."""
 
 import pytest
-from palustra.wetland.models import SoilHorizon
-from palustra.wetland.soils import (
+from app.wetland.models import SoilHorizon
+from app.wetland.soils import (
     check_indicator_a11,
     check_indicator_a12,
     check_indicator_f3,

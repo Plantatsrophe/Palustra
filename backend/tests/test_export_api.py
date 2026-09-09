@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 
-from palustra.api.app import app
+from app.api.app import app
 
 
 @pytest.fixture

@@ -8,9 +8,9 @@ Ensures full compatibility with ESRI ArcGIS Pro, QGIS, Leaflet, and Mapbox.
 
 from typing import Any, Dict, List, Optional, Sequence
 
-from palustra.export.models import BoundaryRoleEnum, USACEPlotExportData
-from palustra.wetland.models import WetlandDeterminationResult
-from palustra.wetland.synthesis import perform_jurisdictional_wetland_determination
+from app.export.models import BoundaryRoleEnum, USACEPlotExportData
+from app.wetland.models import WetlandDeterminationResult
+from app.wetland.synthesis import perform_jurisdictional_wetland_determination
 
 
 def plot_to_geojson_feature(

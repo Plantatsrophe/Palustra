@@ -8,12 +8,13 @@ NRCS hydric soil indicators, and regional hydrology logic.
 import sys
 from pathlib import Path
 
-# Ensure project root is on sys.path
+# Ensure backend root is on sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+BACKEND_ROOT = PROJECT_ROOT / "backend"
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
 
-from palustra.wetland import (
+from app.wetland import (
     RegionEnum,
     SoilHorizon,
     SpeciesCover,

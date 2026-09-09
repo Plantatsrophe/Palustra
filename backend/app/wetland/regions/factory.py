@@ -1,12 +1,12 @@
 """Factory pattern for USACE Regional Supplement policy instantiation."""
 
 from typing import Dict, List, Optional, Type, Union
-from palustra.wetland.regions.agcp import AGCPPolicy
-from palustra.wetland.regions.base import (
+from app.wetland.regions.agcp import AGCPPolicy
+from app.wetland.regions.base import (
     RegionalSupplementEnum,
     RegionalSupplementPolicy,
 )
-from palustra.wetland.regions.emp import EMPPolicy
+from app.wetland.regions.emp import EMPPolicy
 
 
 class RegionalPolicyFactory:

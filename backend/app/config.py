@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = PROJECT_ROOT / "Data"
+DATA_DIR = PROJECT_ROOT / "data"
 
 class Settings(BaseModel):
     """Application settings with environment variable fallback."""

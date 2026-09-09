@@ -6,14 +6,14 @@ import pytest
 from pydantic import ValidationError
 from starlette.testclient import TestClient
 
-from palustra.ai.field_notes_parser import FieldNotesParserService
-from palustra.ai.schemas import (
+from app.ai.field_notes_parser import FieldNotesParserService
+from app.ai.schemas import (
     BotanicalEntryExtraction,
     ConfidenceFlagReasonEnum,
     FieldNoteExtractionResponse,
     FieldNoteMetadata,
 )
-from palustra.api.app import app
+from app.api.app import app
 
 
 # ---------------------------------------------------------------------------

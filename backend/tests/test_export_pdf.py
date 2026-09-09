@@ -4,9 +4,9 @@ import io
 import pytest
 from pypdf import PdfReader
 
-from palustra.export.models import BoundaryRoleEnum, USACEPlotExportData
-from palustra.export.pdf_form import render_usace_pdf, render_usace_project_pdf
-from palustra.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
+from app.export.models import BoundaryRoleEnum, USACEPlotExportData
+from app.export.pdf_form import render_usace_pdf, render_usace_project_pdf
+from app.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
 
 
 @pytest.fixture

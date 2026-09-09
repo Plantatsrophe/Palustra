@@ -27,10 +27,11 @@ dev = [
 ]
 
 [project.scripts]
-palustra = "palustra.cli:main"
+palustra = "app.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["palustra*"]
+where = ["."]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

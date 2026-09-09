@@ -2,9 +2,9 @@
 
 import pytest
 
-from palustra.export.geojson import plot_to_geojson_feature, plots_to_geojson_collection
-from palustra.export.models import BoundaryRoleEnum, USACEPlotExportData
-from palustra.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
+from app.export.geojson import plot_to_geojson_feature, plots_to_geojson_collection
+from app.export.models import BoundaryRoleEnum, USACEPlotExportData
+from app.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
 
 
 @pytest.fixture

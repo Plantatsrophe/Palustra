@@ -5,7 +5,7 @@ import pytest
 from pypdf import PdfReader
 import zipfile
 
-from palustra.core.exceptions import (
+from app.core.exceptions import (
     AmbiguousTaxonWarning,
     InconsistentRegionalSupplementError,
     InvalidCoverPercentageError,
@@ -13,19 +13,19 @@ from palustra.core.exceptions import (
     ReportGenerationError,
     TaxonNotFoundError,
 )
-from palustra.export.models import USACEPlotExportData
-from palustra.models.schemas import (
+from app.export.models import USACEPlotExportData
+from app.models.schemas import (
     FuzzySearchQuery,
     RegionEnum,
     TaxonValidationRequest,
 )
-from palustra.services.determination_service import (
+from app.services.determination_service import (
     DeterminationService,
     DeterminationSynthesis,
 )
-from palustra.services.report_service import ReportService
-from palustra.services.taxon_service import TaxonService, resolve_scientific_name
-from palustra.wetland.models import SoilHorizon, SpeciesCover
+from app.services.report_service import ReportService
+from app.services.taxon_service import TaxonService, resolve_scientific_name
+from app.wetland.models import SoilHorizon, SpeciesCover
 
 
 @pytest.fixture

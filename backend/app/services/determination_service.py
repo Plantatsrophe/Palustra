@@ -2,13 +2,13 @@
 
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from palustra.core.exceptions import (
+from app.core.exceptions import (
     InconsistentRegionalSupplementError,
     InvalidCoverPercentageError,
 )
-from palustra.export.models import USACEPlotExportData
-from palustra.wetland.hydrology import evaluate_wetland_hydrology
-from palustra.wetland.models import (
+from app.export.models import PlotDeterminationInput, USACEPlotExportData
+from app.wetland.hydrology import evaluate_wetland_hydrology
+from app.wetland.models import (
     HydrologyDetermination,
     RegionEnum,
     SoilDetermination,
@@ -17,9 +17,9 @@ from palustra.wetland.models import (
     VegetationDetermination,
     WetlandDeterminationResult,
 )
-from palustra.wetland.regions.base import RegionalSupplementPolicy
-from palustra.wetland.soils import evaluate_hydric_soils
-from palustra.wetland.vegetation import evaluate_hydrophytic_vegetation
+from app.wetland.regions.base import RegionalSupplementPolicy
+from app.wetland.soils import evaluate_hydric_soils
+from app.wetland.vegetation import evaluate_hydrophytic_vegetation
 
 
 class DeterminationSynthesis(WetlandDeterminationResult):
@@ -186,3 +186,41 @@ class DeterminationService:
             is_jurisdictional_wetland=is_wetland,
             summary=summary,
         )
+
+    def evaluate_batch(
+        self,
+        plots: List[PlotDeterminationInput],
+        region: str = "EMP",
+    ) -> List[DeterminationSynthesis]:
+        """Evaluate a batch of USACE sampling plots with high-throughput in-memory execution.
+
+        Args:
+            plots: List of PlotDeterminationInput records to evaluate.
+            region: Approved USACE Regional Supplement ('EMP' or 'AGCP').
+
+        Returns:
+            List of synthesized DeterminationSynthesis three-parameter jurisdictional determinations.
+
+        Raises:
+            InconsistentRegionalSupplementError: If region is not recognized.
+            InvalidCoverPercentageError: If any plot has species cover outside [0.0, 100.0].
+        """
+        valid_region = self.validate_regional_supplement(region)
+        results: List[DeterminationSynthesis] = []
+
+        for plot in plots:
+            if isinstance(plot, dict):
+                p_copy = dict(plot)
+                p_copy["region"] = valid_region
+                plot_input = PlotDeterminationInput(**p_copy)
+            elif isinstance(plot, (PlotDeterminationInput, USACEPlotExportData)):
+                plot_input = plot.model_copy()
+                plot_input.region = valid_region
+            else:
+                plot_input = PlotDeterminationInput.model_validate(plot)
+                plot_input.region = valid_region
+
+            results.append(self.synthesize_determination(plot_input))
+
+        return results
+

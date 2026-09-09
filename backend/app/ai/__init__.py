@@ -1,7 +1,7 @@
 """AI module for Gemini 1.5 Flash multimodal field note processing."""
 
-from palustra.ai.field_notes_parser import FieldNotesParserService, SUPPORTED_MIME_TYPES
-from palustra.ai.schemas import (
+from app.ai.field_notes_parser import FieldNotesParserService, SUPPORTED_MIME_TYPES
+from app.ai.schemas import (
     BotanicalEntryExtraction,
     ConfidenceFlagReasonEnum,
     FieldNoteExtractionResponse,

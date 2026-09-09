@@ -1,8 +1,8 @@
 """Realistic sample plot fixtures and three-parameter jurisdictional determination tests."""
 
 import pytest
-from palustra.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
-from palustra.wetland.synthesis import perform_jurisdictional_wetland_determination
+from app.wetland.models import RegionEnum, SoilHorizon, SpeciesCover
+from app.wetland.synthesis import perform_jurisdictional_wetland_determination
 
 
 class TestWetlandDeterminationSynthesis:

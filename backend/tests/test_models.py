@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from palustra.models.schemas import (
+from app.models.schemas import (
     IdentificationConfidenceEnum,
     NativityEnum,
     NWPLIndicatorEnum,

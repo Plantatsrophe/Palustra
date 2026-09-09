@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Set
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-from palustra.wetland.regions.base import RegionalSupplementEnum, StratumCriteria
+from app.wetland.regions.base import RegionalSupplementEnum, StratumCriteria
 
 # Preserve backward compatibility while adopting extensible RegionalSupplementEnum
 RegionEnum = RegionalSupplementEnum

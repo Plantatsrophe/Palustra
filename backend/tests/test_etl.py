@@ -4,14 +4,14 @@ import pytest
 from pathlib import Path
 from sqlalchemy import select, func
 
-from palustra.config import settings
-from palustra.etl.ingest import (
+from app.config import settings
+from app.etl.ingest import (
     load_nwpl_excel,
     load_usda_csv,
     resolve_regional_indicator,
     run_etl_pipeline,
 )
-from palustra.models.db_models import Taxon, RegionalIndicator
+from app.models.db_models import Taxon, RegionalIndicator
 
 def test_load_nwpl_agcp():
     agcp_data = load_nwpl_excel(settings.nwpl_agcp_path, "AGCP")

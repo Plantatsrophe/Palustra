@@ -3,35 +3,41 @@
 import hashlib
 import json
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional, Union
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from palustra.ai import FieldNoteExtractionResponse, FieldNotesParserService
-from palustra.config import settings
-from palustra.core.exceptions import (
+from app.ai import FieldNoteExtractionResponse, FieldNotesParserService
+from app.config import settings
+from app.core.exceptions import (
     PalustraDomainError,
     ReportGenerationError,
     TaxonNotFoundError,
 )
-from palustra.db.session import get_db
-from palustra.etl.cache import field_cache
-from palustra.etl.ingest import run_etl_pipeline
-from palustra.export.models import GeoJSONExportRequest, PDFExportRequest
-from palustra.models.db_models import Taxon
-from palustra.models.schemas import (
+from app.db.session import get_db
+from app.etl.cache import field_cache
+from app.etl.ingest import run_etl_pipeline
+from app.export.models import GeoJSONExportRequest, PDFExportRequest
+from app.models.db_models import Taxon
+from app.models.schemas import (
+    BatchPlotDeterminationRequest,
     FuzzySearchResponse,
     IngestionSummary,
     OfflineCacheManifest,
+    PlotDeterminationInput,
     RegionEnum,
     TaxonRecord,
     TaxonValidationRequest,
     TaxonValidationResult,
 )
-from palustra.services.report_service import ReportService
-from palustra.services.taxon_service import TaxonService
+from app.services.determination_service import (
+    DeterminationService,
+    DeterminationSynthesis,
+)
+from app.services.report_service import ReportService
+from app.services.taxon_service import TaxonService
 
 router = APIRouter(prefix="/api/v1")
 
@@ -99,6 +105,39 @@ def validate_field_taxon(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=exc.message,
+        )
+
+
+@router.post(
+    "/determinations/batch",
+    response_model=List[DeterminationSynthesis],
+    tags=["USACE Wetland Determinations"],
+    summary="Batch evaluate USACE three-parameter jurisdictional wetland determinations",
+)
+def evaluate_batch_determinations(
+    payload: Union[BatchPlotDeterminationRequest, List[PlotDeterminationInput]],
+    region: Optional[str] = Query(None, description="Optional regional supplement override: EMP or AGCP"),
+):
+    """Evaluate multiple field plots in a high-throughput batch operation."""
+    determination_service = DeterminationService()
+    if isinstance(payload, BatchPlotDeterminationRequest):
+        plots = payload.plots
+        target_region = region or payload.region or "EMP"
+    else:
+        plots = payload
+        target_region = region or (plots[0].region.value if plots and hasattr(plots[0], "region") and plots[0].region else "EMP")
+
+    try:
+        return determination_service.evaluate_batch(plots=plots, region=target_region)
+    except PalustraDomainError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=exc.message,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
         )
 
 

@@ -3,12 +3,12 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from palustra.core.exceptions import ReportGenerationError
-from palustra.export.models import USACEPlotExportData
-from palustra.export.service import USACEExportService
-from palustra.services.determination_service import DeterminationService
+from app.core.exceptions import ReportGenerationError
+from app.export.models import USACEPlotExportData
+from app.export.service import USACEExportService
+from app.services.determination_service import DeterminationService
 
-logger = logging.getLogger("palustra.services.report")
+logger = logging.getLogger("app.services.report")
 
 
 class ReportService:

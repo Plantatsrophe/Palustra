@@ -1,7 +1,7 @@
 """Unit tests for botanical parser and USACE ambiguous taxa governance."""
 
 import pytest
-from palustra.etl.parser import (
+from app.etl.parser import (
     clean_text,
     parse_scientific_name,
     classify_field_ambiguity,
